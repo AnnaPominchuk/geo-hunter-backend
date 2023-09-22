@@ -72,6 +72,15 @@ app.get('/shop', checkJwt, async (req , res) => {
     }
 })
 
+app.get('/user', checkJwt, async (req , res) => {
+    try {
+        const users = await User.find()
+        res.status(200).send({users: users})
+    } catch (error){
+        res.status(500).send({error: error.message})
+    }
+})
+
 app.listen(8000, () => {
     console.log("Server started on port 8000")
 })
