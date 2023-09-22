@@ -21,11 +21,12 @@ const checkJwt = auth({
 app.post('/user/login', checkJwt, async (req , res) => {
     console.log('login api check')
 
-    const userExist = await User.findOne({name: 'anna'});
+    const userExist = await User.findOne({email: req.body.email});
     if(!userExist) {
         const newUser = new User({
-            name: 'anna',
-            lastname: 'pominchuk',
+            email: req.body.email,
+            name: req.body.name,
+            lastname: req.body.lastname,
         })
 
         newUser.save()
