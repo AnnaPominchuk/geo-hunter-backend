@@ -21,11 +21,12 @@ const checkJwt = auth({
 app.post('/user/login', checkJwt, async (req , res) => {
     console.log('login api check')
 
-    const userExist = await User.findOne({name: 'anna'});
+    const userExist = await User.findOne({email: req.body.email});
     if(!userExist) {
         const newUser = new User({
-            name: 'anna',
-            lastname: 'pominchuk',
+            email: req.body.email,
+            name: req.body.name,
+            lastname: req.body.lastname,
         })
 
         newUser.save()
@@ -86,6 +87,15 @@ app.get('/shop', checkJwt, async (req , res) => {
     try {
         const shops = await Shop.find()
         res.status(200).send({shops: shops})
+    } catch (error){
+        res.status(500).send({error: error.message})
+    }
+})
+
+app.get('/user', checkJwt, async (req , res) => {
+    try {
+        const users = await User.find()
+        res.status(200).send({users: users})
     } catch (error){
         res.status(500).send({error: error.message})
     }
