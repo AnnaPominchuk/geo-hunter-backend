@@ -39,7 +39,12 @@ app.post('/shop/create', async (req , res) => {
     
     const session = await mongoose.startSession()
     try {
-        session.startTransaction()
+        if(!session) {
+            console.log('Error occur while starting session')
+            res.status(500).send({ error: 'Internal server error' })
+        }
+
+        await session.startTransaction()
         const promises = []
 
         if(!req.body.csvBuffer)
@@ -60,7 +65,22 @@ app.post('/shop/create', async (req , res) => {
             promises.push(newShop.save({ session: session }))
         } 
 
-    Promise.all(promises)
+    /*Promise.allSettled(promises)
+        .then(async (promises) => {
+            for(const promis of promises) {
+                if(promis.status == "rejected"){
+                    await session.abortTransaction()
+                    session.endSession()
+                    res.status(500).end()
+                    return
+                }
+            }
+            await session.commitTransaction()
+            session.endSession()
+            res.status(200).end()
+        })*/
+
+        Promise.all(promises)
         .then(async () => {
             await session.commitTransaction()
             session.endSession()
@@ -74,16 +94,16 @@ app.post('/shop/create', async (req , res) => {
         })
 
     } catch (error) {
-        console.error(error);
+        console.error(error)
         if (session) {
-            await session.abortTransaction();
-            session.endSession();
+            await session.abortTransaction()
+            session.endSession()
         }
-        res.status(500).send({ error: 'Internal server error' });
+        res.status(500).send({ error: 'Internal server error' })
     }
 })
 
-app.get('/shop', checkJwt, async (req , res) => {
+app.get('/shop', async (req , res) => {
     try {
         const shops = await Shop.find()
         res.status(200).send({shops: shops})
@@ -101,6 +121,15 @@ app.get('/user', checkJwt, async (req , res) => {
     }
 })
 
+app.post('/review/upload', async (req, res) => {
+    try {
+        console.log(req.body)
+        res.status(200).send()
+    } catch (error){
+        res.status(500).send({error: error.message})
+    }
+})
+
 mongoose.connection.once('open', () => {
     console.log('Connected to MongoDB');
     
@@ -111,5 +140,5 @@ mongoose.connection.once('open', () => {
   });
   
   mongoose.connection.on('error', (error) => {
-    console.error('Error connecting to MongoDB:', error);
+    console.error('Error connecting to MongoDB:', error)
   });
