@@ -1,5 +1,6 @@
 const express = require('express')
 const mongoose = require('./db');
+const axios = require('axios');
 const app = express()
 const { auth, requiredScopes } = require('express-oauth2-jwt-bearer')
 
@@ -45,7 +46,6 @@ app.post('/shop/create', async (req , res) => {
         }
 
         await session.startTransaction()
-        const promises = []
 
         if(!req.body.csvBuffer)
             res.status(500).send({error: 'Bad Request'})
@@ -61,8 +61,15 @@ app.post('/shop/create', async (req , res) => {
                     newObj[header[j].trim()] = shopData[j].trim()
                 }
             }
+
             const newShop = new Shop(newObj)
-            promises.push(newShop.save({ session: session }))
+            await newShop.save({ session: session })
+                .catch(async (error) => {
+                    console.log(error)
+                    await session.abortTransaction()
+                    session.endSession()
+                    res.status(500).end()
+                });
         } 
 
     /*Promise.allSettled(promises)
@@ -80,18 +87,9 @@ app.post('/shop/create', async (req , res) => {
             res.status(200).end()
         })*/
 
-        Promise.all(promises)
-        .then(async () => {
-            await session.commitTransaction()
-            session.endSession()
-            res.status(200).end()
-        })
-        .catch(async (error) => {
-            console.log(error)
-            await session.abortTransaction()
-            session.endSession()
-            res.status(500).end()
-        })
+        await session.commitTransaction()
+        session.endSession()
+        res.status(200).end()
 
     } catch (error) {
         console.error(error)
