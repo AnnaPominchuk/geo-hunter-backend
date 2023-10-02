@@ -7,7 +7,7 @@ const util = require('util')
 const unlinkFile = util.promisify(fs.unlink)
 
 const multer = require('multer');
-const upload = multer({dest:'uploads/'}).single('image') ;
+const upload = multer({dest:'uploads/'}).any('images') ;
 
 const app = express()
 const { auth, requiredScopes } = require('express-oauth2-jwt-bearer')
@@ -202,10 +202,14 @@ app.post('/images', upload, checkJwt, async function (req, res) {
             res.status(500).send({ error: 'Internal server error' })
         }
 
-        const file = req.file
+        const files = req.files
+        let results = []
 
-        const result = await uploadFile(file)
-        await unlinkFile(file.path) // unlink from filesystem
+        for await (const file of files) {
+            const r = await uploadFile(file)
+            results.push(r)
+            await unlinkFile(file.path) // unlink from filesystem
+        }
 
         await session.startTransaction()
 
@@ -214,7 +218,9 @@ app.post('/images', upload, checkJwt, async function (req, res) {
 
             if (review)
             {
-                review.images.push(result.Key)
+                for await (const result of results) {
+                    review.images.push(result.Key)
+                }
                 await review.save({ session: session })
             }
         }
@@ -234,7 +240,6 @@ app.post('/images', upload, checkJwt, async function (req, res) {
 })
 
 app.get('/images/shop/:shopId', checkJwt, async (req, res) => {
-    console.log(req.params)
     const shopId = req.params.shopId;
 
     const shop = await Shop.findById({_id: shopId});
@@ -248,13 +253,10 @@ app.get('/images/shop/:shopId', checkJwt, async (req, res) => {
         imageKeys = [...imageKeys, ...review.images]
     });
 
-    console.log(imageKeys)
-
     return res.status(200).send(imageKeys) 
 })
 
 app.get('/images/:key', async (req, res) => { // TO DO: checkJwt
-    console.log(req.params)
     const key = req.params.key
 
     if (key) {
