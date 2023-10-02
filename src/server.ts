@@ -1,11 +1,21 @@
 const express = require('express')
 const mongoose = require('./db');
 const axios = require('axios');
+
+const fs = require('fs')
+const util = require('util')
+const unlinkFile = util.promisify(fs.unlink)
+
+const multer = require('multer');
+const upload = multer({dest:'uploads/'}).single('image') ;
+
 const app = express()
 const { auth, requiredScopes } = require('express-oauth2-jwt-bearer')
 
 app.use(express.json({ limit: '10mb' }))
 app.use(express.urlencoded({ extended: true, limit: '10mb' }))
+
+const { uploadFile, getFileStream } = require('./s3')
 
 const User = require('./model/user')
 const Shop = require('./model/shop')
@@ -19,6 +29,8 @@ const checkJwt = auth({
   audience: process.env.AUTH0_AUDIENCE,
   issuerBaseURL: process.env.AUTH0_ISSUER,
 });
+
+// app.use(checkJwt)
 
 app.post('/user/login', checkJwt, async (req , res) => {
     console.log('login api check')
@@ -142,7 +154,7 @@ app.get('/review/:userId?', checkJwt, async (req , res) => {
     }
 })
 
-app.post('/review/upload', async (req, res) => { // TO DO: naming
+app.post('/review/upload', checkJwt, async (req, res) => { // TO DO: naming
     const session = await mongoose.startSession()
     try {
         if(!session) {
@@ -153,15 +165,9 @@ app.post('/review/upload', async (req, res) => { // TO DO: naming
         await session.startTransaction()
 
         const { 
-            name, 
             shopId, 
             userId, 
-            review, 
-            latitude, 
-            longitude 
         } = req.body;
-        
-        console.log(req.body)
 
         const user = await User.findById({_id: userId});
         if (!user)
@@ -177,6 +183,45 @@ app.post('/review/upload', async (req, res) => { // TO DO: naming
 
         await session.commitTransaction()
         session.endSession()
+        res.status(200).send({reviewId: newReview._id})
+    } catch (error) {
+        console.error(error)
+        if (session) {
+            await session.abortTransaction()
+            session.endSession()
+        }
+        res.status(500).send({ error: 'Internal server error' })
+    }
+})
+
+app.post('/images', upload, checkJwt, async function (req, res) {
+    const session = await mongoose.startSession()
+    try {
+        if(!session) {
+            console.log('Error occur while starting session')
+            res.status(500).send({ error: 'Internal server error' })
+        }
+
+        const file = req.file
+
+        const result = await uploadFile(file)
+        await unlinkFile(file.path) // unlink from filesystem
+
+        await session.startTransaction()
+
+        if (req.body.reviewId) {
+            const review = await Review.findById({_id: req.body.reviewId});
+
+            if (review)
+            {
+                review.images.push(result.Key)
+                await review.save({ session: session })
+            }
+        }
+
+        await session.commitTransaction()
+        session.endSession()
+
         res.status(200).end()
     } catch (error) {
         console.error(error)
@@ -186,6 +231,37 @@ app.post('/review/upload', async (req, res) => { // TO DO: naming
         }
         res.status(500).send({ error: 'Internal server error' })
     }
+})
+
+app.get('/images/shop/:shopId', checkJwt, async (req, res) => {
+    console.log(req.params)
+    const shopId = req.params.shopId;
+
+    const shop = await Shop.findById({_id: shopId});
+    if (!shop)
+        return res.status(404).send({error: 'Object not found'})
+
+    const reviews = await Review.find({shopId: shopId});
+
+    let imageKeys = []
+    reviews?.forEach(review => {
+        imageKeys = [...imageKeys, ...review.images]
+    });
+
+    console.log(imageKeys)
+
+    return res.status(200).send(imageKeys) 
+})
+
+app.get('/images/:key', async (req, res) => { // TO DO: checkJwt
+    console.log(req.params)
+    const key = req.params.key
+
+    if (key) {
+        const readStream = getFileStream(key)
+        return readStream.pipe(res)
+    }
+    else return res.status(404).send({error: 'Not found'}) 
 })
 
 mongoose.connection.once('open', () => {
