@@ -67,26 +67,9 @@ app.post('/shop/create', async (req , res) => {
             await newShop.save({ session: session })
                 .catch(async (error) => {
                     console.log(error)
-                    await session.abortTransaction()
-                    session.endSession()
-                    res.status(500).end()
+                    return Promise.reject(error)
                 });
         } 
-
-    /*Promise.allSettled(promises)
-        .then(async (promises) => {
-            for(const promis of promises) {
-                if(promis.status == "rejected"){
-                    await session.abortTransaction()
-                    session.endSession()
-                    res.status(500).end()
-                    return
-                }
-            }
-            await session.commitTransaction()
-            session.endSession()
-            res.status(200).end()
-        })*/
 
         await session.commitTransaction()
         session.endSession()
