@@ -12,6 +12,9 @@ const ReviewSchema = new mongoose.Schema({
     userId: {
         type: String,
         required: true
+    },
+    images: {
+        type: Array
     }
 })
 
