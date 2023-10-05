@@ -5,6 +5,11 @@ const ReviewSchema = new mongoose.Schema({
     latitude: Number,
     longitude: Number,
     review: String,
+    status: {
+        type: String,
+        enum : ['InReview','Approved', 'Rejected'],
+        default: 'InReview'
+    },
     shopId: {
         type: String,
         required: true
@@ -16,6 +21,9 @@ const ReviewSchema = new mongoose.Schema({
     images: {
         type: Array
     }
+},{
+    collection:'reviews',
+    versionKey: false
 })
 
 module.exports = mongoose.model('Review', ReviewSchema)
