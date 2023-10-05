@@ -122,7 +122,7 @@ app.get('/user/:email?', checkJwt, async (req , res) => {
     }
 })
 
-app.get('/review/:userId?', checkJwt, async (req , res) => {
+app.get('/review/user/:userId?', checkJwt, async (req , res) => {
     try {
         if (req.params.userId) {
             const reviews = await Review.find({userId: req.params.userId});
@@ -133,6 +133,40 @@ app.get('/review/:userId?', checkJwt, async (req , res) => {
             res.status(200).send({reviews: reviews})
         }
     } catch (error){
+        res.status(500).send({error: error.message})
+    }
+})
+
+app.patch('/review/:reviewId?', checkJwt, async (req , res) => {
+    const session = await mongoose.startSession()
+    try {
+        if(!session) {
+            console.log('Error occur while starting session')
+            res.status(500).send({ error: 'Internal server error' })
+        }
+
+        if (req.params.reviewId) {
+            await session.startTransaction()
+
+            const {status} = req.body
+
+            await  Review.findByIdAndUpdate(
+                req.params.reviewId, 
+                {status: status}
+            );
+
+            await session.commitTransaction()
+            session.endSession()
+
+            res.status(200).end()
+        }
+        else
+            return res.status(404).send({error: 'Object not found'})
+    } catch (error){
+        if (session) {
+            await session.abortTransaction()
+            session.endSession()
+        }
         res.status(500).send({error: error.message})
     }
 })
