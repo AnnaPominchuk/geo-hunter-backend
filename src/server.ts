@@ -137,6 +137,20 @@ app.get('/review/user/:userId?', checkJwt, async (req , res) => {
     }
 })
 
+app.get('/review/:reviewId?', checkJwt, async (req , res) => {
+    try {
+        if (req.params.reviewId) {
+            const review = await Review.findById({_id: req.params.reviewId});
+            if (review)
+                return res.status(200).send(review)
+        }
+
+        return res.status(404).end()
+    } catch (error){
+        res.status(500).send({error: error.message})
+    }
+})
+
 app.patch('/review/:reviewId?', checkJwt, async (req , res) => {
     const session = await mongoose.startSession()
     try {
@@ -271,6 +285,18 @@ app.get('/images/shop/:shopId', checkJwt, async (req, res) => {
     });
 
     return res.status(200).send(imageKeys) 
+})
+
+app.get('/images/review/:reviewId', checkJwt, async (req, res) => {
+    if (!req.params.reviewId)
+        return res.status(404).send({error: 'Object not found'})
+
+    const review = await Review.findById({_id: req.params.reviewId});
+
+    if (!review)
+        return res.status(404).send({error: 'Object not found'})
+
+    return res.status(200).send(review.images) 
 })
 
 app.get('/images/:key', async (req, res) => { // TO DO: checkJwt
