@@ -8,7 +8,10 @@ const UserSchema = new mongoose.Schema({
     },
     name: String,
     lastname: String,
-    rating: Number
+    rating: Number,
+    useGooglePhoto: Boolean,
+    profilePhotoKey: String,
+    profilePhotoURL: String
 }) 
 
 module.exports = mongoose.model('User', UserSchema)

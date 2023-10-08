@@ -10,7 +10,7 @@ const multer = require('multer');
 const upload = multer({dest:'uploads/'}).any('images') ;
 
 const app = express()
-const { auth, requiredScopes } = require('express-oauth2-jwt-bearer')
+const { auth } = require('express-oauth2-jwt-bearer')
 
 app.use(express.json({ limit: '10mb' }))
 app.use(express.urlencoded({ extended: true, limit: '10mb' }))
@@ -41,6 +41,8 @@ app.post('/user/login', checkJwt, async (req , res) => {
             email: req.body.email,
             name: req.body.name,
             lastname: req.body.lastname,
+            useGooglePhoto: true,
+            profilePhotoURL: req.body.photoURL
         })
 
         newUser.save()
@@ -49,7 +51,7 @@ app.post('/user/login', checkJwt, async (req , res) => {
     res.end(JSON.stringify({status: 200}));
 })
 
-app.post('/shop/create', async (req , res) => {
+app.post('/shop/create', checkJwt, async (req , res) => {
     
     const session = await mongoose.startSession()
     try {
@@ -97,7 +99,7 @@ app.post('/shop/create', async (req , res) => {
     }
 })
 
-app.get('/shop', async (req , res) => {
+app.get('/shop', checkJwt, async (req , res) => {
     try {
         const shops = await Shop.find()
         res.status(200).send({shops: shops})
@@ -271,20 +273,25 @@ app.post('/images', upload, checkJwt, async function (req, res) {
 })
 
 app.get('/images/shop/:shopId', checkJwt, async (req, res) => {
-    const shopId = req.params.shopId;
+    try {
+        const shopId = req.params.shopId;
 
-    const shop = await Shop.findById({_id: shopId});
-    if (!shop)
-        return res.status(404).send({error: 'Object not found'})
+        const shop = await Shop.findById({_id: shopId});
+        if (!shop)
+            return res.status(404).send({error: 'Object not found'})
 
-    const reviews = await Review.find({shopId: shopId});
+        const reviews = await Review.find({shopId: shopId});
 
-    let imageKeys = []
-    reviews?.forEach(review => {
-        imageKeys = [...imageKeys, ...review.images]
-    });
+        let imageKeys = []
+        reviews?.forEach(review => {
+            imageKeys = [...imageKeys, ...review.images]
+            });
 
-    return res.status(200).send(imageKeys) 
+        return res.status(200).send(imageKeys) 
+    } catch (error) {
+        console.error(error)
+        res.status(500).send({ error: 'Internal server error' })
+    }   
 })
 
 app.get('/images/review/:reviewId', checkJwt, async (req, res) => {
@@ -299,7 +306,7 @@ app.get('/images/review/:reviewId', checkJwt, async (req, res) => {
     return res.status(200).send(review.images) 
 })
 
-app.get('/images/:key', async (req, res) => { // TO DO: checkJwt
+app.get('/images/:key', checkJwt, async (req, res) => {
     const key = req.params.key
 
     if (key) {
@@ -307,6 +314,78 @@ app.get('/images/:key', async (req, res) => { // TO DO: checkJwt
         return readStream.pipe(res)
     }
     else return res.status(404).send({error: 'Not found'}) 
+})
+
+app.post('/profile-photo/upload', upload, checkJwt, async (req, res) => {
+    try{
+        const fileData = req.files[0]
+        const file = await uploadFile(fileData)
+        
+        await unlinkFile(fileData.path)
+
+        if(req.body.userId){
+            const user = await User.findById({_id: req.body.userId})
+            user.profilePhotoKey = file.Key
+            user.useGooglePhoto = false
+            await user.save()
+        }
+    
+        res.status(200).end()
+    } catch (error) {
+        console.error(error)
+        res.status(500).send({ error: 'Internal server error' })
+    }
+})
+
+app.get('/profile-photo/user/:userId', checkJwt, async(req, res) => { // TO DO: may be delete 
+    try {
+        const userId = req.params.userId
+
+        const user = await User.findById({_id: userId})
+        if (!user)
+            return res.status(404).send({error: 'Object not found'})
+
+        let key = user.profilePhotoKey
+        return res.status(200).send({key}) 
+    } catch (error) {
+        console.error(error)
+        res.status(500).send({ error: 'Internal server error' })
+    }   
+})
+
+app.get('/profile-photo/:key', checkJwt, async(req, res) => {
+    try {
+        const key = req.params.key
+
+        if (key) {
+            const readStream = getFileStream(key)
+            return readStream.pipe(res)
+        }
+
+        return res.status(404).send({error: 'Not found'}) 
+    } catch (error) {
+        console.error(error)
+        res.status(500).send({ error: 'Internal server error' })
+    }   
+})
+
+app.get('/profile-photo/delete/:userId', checkJwt, async(req, res) => { // TO DO: may be delete 
+    try {
+        const userId = req.params.userId
+
+        const user = await User.findById({_id: userId})
+        if (!user)
+            return res.status(404).send({error: 'Object not found'})
+
+        user.profilePhotoKey = ''
+        user.useGooglePhoto = false
+        await user.save()
+
+        return res.status(200).send() 
+    } catch (error) {
+        console.error(error)
+        res.status(500).send({ error: 'Internal server error' })
+    }   
 })
 
 mongoose.connection.once('open', () => {
