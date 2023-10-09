@@ -299,7 +299,7 @@ app.get('/images/review/:reviewId', checkJwt, async (req, res) => {
     return res.status(200).send(review.images) 
 })
 
-app.get('/images/:key', async (req, res) => { // TO DO: checkJwt
+app.get('/images/:key', checkJwt, async (req, res) => {
     const key = req.params.key
 
     if (key) {
