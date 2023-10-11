@@ -4,6 +4,7 @@ const ReviewSchema = new mongoose.Schema({
     name: String,
     latitude: Number,
     longitude: Number,
+    address: String,
     review: String,
     status: {
         type: String,
