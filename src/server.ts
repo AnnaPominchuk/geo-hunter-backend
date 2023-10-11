@@ -164,12 +164,33 @@ app.patch('/review/:reviewId?', checkJwt, async (req , res) => {
         if (req.params.reviewId) {
             await session.startTransaction()
 
-            const {status} = req.body
+            let {status, rating} = req.body
 
-            await  Review.findByIdAndUpdate(
-                req.params.reviewId, 
-                {status: status}
-            );
+            const review = await Review.findById({_id: req.params.reviewId})
+
+            if (!review) {
+                session.endSession()
+                return res.status(404).send({error: 'Object not found'})
+            }
+
+            if (status === 'Rejected') rating = 0
+
+            if (status != review.status) {
+                const user = await User.findById({_id: review.userId})
+
+                if (user) {
+                    let points: number = user.rating
+
+                    if (status === 'Rejected') points -= review.rating
+                    if (status === 'Approved') points += parseInt(rating)
+
+                    user.set({rating: points > 0 ? points : 0})
+                    await user.save();
+                }
+            }
+
+            review.set({status: status, rating: rating})
+            await review.save();
 
             await session.commitTransaction()
             session.endSession()
