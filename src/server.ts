@@ -162,7 +162,7 @@ app.patch('/review/:reviewId?', checkJwt, async (req , res) => {
         if (req.params.reviewId) {
             await session.startTransaction()
 
-            let {status, rating} = req.body
+            let {status, rating, options} = req.body
 
             const review = await Review.findById({_id: req.params.reviewId})
 
@@ -184,6 +184,20 @@ app.patch('/review/:reviewId?', checkJwt, async (req , res) => {
 
                     user.set({rating: points > 0 ? points : 0})
                     await user.save();
+                }
+            }
+
+            if (status === 'Approved') {
+                if (options && options.saveAddress) {
+                    const shop = await Shop.findById({_id: review.shopId})
+
+                    if (shop) {
+                        shop.set({  address: review.address,
+                                    latitude: review.latitude, 
+                                    longitude: review.longitude
+                        })
+                        await shop.save();
+                    }
                 }
             }
 
