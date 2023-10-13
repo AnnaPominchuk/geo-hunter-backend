@@ -51,6 +51,36 @@ app.post('/user/login', checkJwt, async (req , res) => {
     res.end(JSON.stringify({status: 200}));
 })
 
+app.patch('/user/:email?', checkJwt, async (req , res) => {
+    const session = await mongoose.startSession()
+    try {
+        if(!session) {
+            console.log('Error occur while starting session')
+            res.status(500).send({ error: 'Internal server error' })
+        }
+
+        if (req.params.email) {
+            await session.startTransaction()
+
+            let {roles} = req.body
+            await User.findOneAndUpdate({email: req.params.email}, {roles:roles})
+
+            await session.commitTransaction()
+            session.endSession()
+
+            res.status(200).end()
+        }
+        else
+            return res.status(404).send({error: 'Object not found'})
+    } catch (error){
+        if (session) {
+            await session.abortTransaction()
+            session.endSession()
+        }
+        res.status(500).send({error: error.message})
+    }
+})
+
 app.post('/shop/create', checkJwt, async (req , res) => {
     
     const session = await mongoose.startSession()
