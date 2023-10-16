@@ -10,7 +10,6 @@ const UserSchema = new mongoose.Schema({
         unique: true
     },
     name: String,
-    lastname: String,
     rating: Number,
     useGooglePhoto: Boolean,
     profilePhotoKey: String,

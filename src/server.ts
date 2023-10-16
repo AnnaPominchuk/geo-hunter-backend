@@ -40,7 +40,6 @@ app.post('/user/login', checkJwt, async (req , res) => {
         const newUser = new User({
             email: req.body.email,
             name: req.body.name,
-            lastname: req.body.lastname,
             useGooglePhoto: true,
             profilePhotoURL: req.body.photoURL
         })
@@ -62,8 +61,7 @@ app.patch('/user/:email?', checkJwt, async (req , res) => {
         if (req.params.email) {
             await session.startTransaction()
 
-            let {roles} = req.body
-            await User.findOneAndUpdate({email: req.params.email}, {roles:roles})
+            await User.findOneAndUpdate({email: req.params.email}, req.body)
 
             await session.commitTransaction()
             session.endSession()
