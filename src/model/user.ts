@@ -1,7 +1,7 @@
 const mongoose = require('mongoose')
 
 // TO DO: use emun
-const roleSchema = new mongoose.Schema({  value: {  type: String, enum: ['Admin','Activist'] } });
+//const roleSchema = new mongoose.Schema({  value: {  type: String, enum: ['Admin','Activist'] } });
 
 const UserSchema = new mongoose.Schema({
     email: {
