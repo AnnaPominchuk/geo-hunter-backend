@@ -1,6 +1,5 @@
 const express = require('express')
 const mongoose = require('./db')
-const axios = require('axios')
 
 const fs = require('fs')
 const util = require('util')
@@ -16,6 +15,7 @@ app.use(express.json({ limit: '10mb' }))
 app.use(express.urlencoded({ extended: true, limit: '10mb' }))
 
 const { uploadFile, getFileStream } = require('./s3')
+const { notifyAllAdmins } = require('./mailer')
 
 const User = require('./model/user')
 const Shop = require('./model/shop')
@@ -266,6 +266,9 @@ app.post('/review/upload', checkJwt, async (req, res) => {
 
         await session.commitTransaction()
         session.endSession()
+
+        await notifyAllAdmins()
+        
         res.status(200).send({ reviewId: newReview._id })
     } catch (error) {
         console.error(error)
