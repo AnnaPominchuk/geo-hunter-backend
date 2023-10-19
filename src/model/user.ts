@@ -1,13 +1,10 @@
 const mongoose = require('mongoose')
 
-// TO DO: use emun
-//const roleSchema = new mongoose.Schema({  value: {  type: String, enum: ['Admin','Activist'] } });
-
 const UserSchema = new mongoose.Schema({
     email: {
         type: String,
         required: true,
-        unique: true
+        unique: true,
     },
     name: String,
     rating: Number,
@@ -16,8 +13,9 @@ const UserSchema = new mongoose.Schema({
     profilePhotoURL: String,
     roles: {
         type: [String],
-        default: ['Activist']
-    }
-}) 
+        enum: ['Admin', 'Activist'],
+        default: ['Activist'],
+    },
+})
 
 module.exports = mongoose.model('User', UserSchema)
