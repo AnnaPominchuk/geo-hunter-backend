@@ -77,6 +77,7 @@ export async function updateReviewStatus(req, res) {
                             address: review.address,
                             latitude: review.latitude,
                             longitude: review.longitude,
+                            name: review.name,
                         })
                         await shop.save()
                     }

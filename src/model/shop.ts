@@ -1,7 +1,7 @@
 const mongoose = require('mongoose')
 
 const ShopSchema = new mongoose.Schema({
-    name: {
+    requestor: {
         type: String,
         required: true,
     },
@@ -26,6 +26,10 @@ const ShopSchema = new mongoose.Schema({
     longitude: {
         type: Number,
         required: true,
+    },
+    name: {
+        type: String,
+        required: false,
     },
 })
 
