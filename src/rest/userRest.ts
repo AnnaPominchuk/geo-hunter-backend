@@ -9,6 +9,7 @@ export async function login(req, res) {
             name: req.body.name,
             useGooglePhoto: true,
             profilePhotoURL: req.body.photoURL,
+            rating: 0,
         })
 
         newUser.save()
