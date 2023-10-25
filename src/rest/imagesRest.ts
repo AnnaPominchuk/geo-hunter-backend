@@ -62,7 +62,8 @@ export async function getImagesByShopId(req, res) {
 
         let imageKeys = []
         reviews?.forEach((review) => {
-            imageKeys = [...imageKeys, ...review.images]
+            if (review.status === 'Approved')
+                imageKeys = [...imageKeys, ...review.images]
         })
 
         return res.status(200).send(imageKeys)
