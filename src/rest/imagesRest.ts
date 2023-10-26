@@ -9,13 +9,13 @@ const { uploadFile, getFileStream } = require('../utils/s3')
 
 export async function uploadImages(req, res) {
     const session = await mongoose.startSession()
+    const files = req.files
     try {
         if (!session) {
             console.log('Error occur while starting session')
             res.status(500).send({ error: 'Internal server error' })
         }
 
-        const files = req.files
         const results = []
 
         await session.startTransaction()
@@ -23,7 +23,6 @@ export async function uploadImages(req, res) {
         for await (const file of files) {
             const r = await uploadFile(file)
             results.push(r)
-            await unlinkFile(file.path) // unlink from filesystem
         }
 
         if (req.body.reviewId) {
@@ -48,6 +47,10 @@ export async function uploadImages(req, res) {
             session.endSession()
         }
         res.status(500).send({ error: 'Internal server error' })
+    } finally {
+        for await (const file of files) {
+            await unlinkFile(file.path) // unlink from filesystem
+        }
     }
 }
 
@@ -85,10 +88,15 @@ export async function getImagesByReviewId(req, res) {
 }
 
 export async function getImageByKey(req, res) {
-    const key = req.params.key
+    try {
+        const key = req.params.key
 
-    if (key) {
-        const readStream = getFileStream(key)
-        return readStream.pipe(res)
-    } else return res.status(404).send({ error: 'Not found' })
+        if (key) {
+            const responce = await getFileStream(key)
+            return responce.Body.pipe(res)
+        } else return res.status(404).send({ error: 'Not found' })
+    } catch (err) {
+        console.log(err)
+        res.status(500).send({ error: 'Internal server error' })
+    }
 }

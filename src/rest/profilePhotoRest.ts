@@ -47,8 +47,8 @@ export async function getProfilePhotoByKey(req, res) {
         const key = req.params.key
 
         if (key) {
-            const readStream = getFileStream(key)
-            return readStream.pipe(res)
+            const responce = await getFileStream(key)
+            return responce.Body.pipe(res)
         }
 
         return res.status(404).send({ error: 'Not found' })
