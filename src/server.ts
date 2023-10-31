@@ -16,6 +16,8 @@ const reviewRest = require('./rest/reviewRest')
 const imagesRest = require('./rest/imagesRest')
 const profilePhotoRest = require('./rest/profilePhotoRest')
 
+const { checkReviewByIdPerm, checkReviewByUserPerm } = require('./utils/permissions')
+
 require('dotenv').config()
 
 // Authorization middleware. When used, the Access Token must
@@ -26,15 +28,15 @@ const checkJwt = auth({
 })
 
 app.post('/user/login', checkJwt, userRest.login)
-app.patch('/user/:email?', checkJwt, userRest.addUser)
+app.patch('/user/:email?', checkJwt, userRest.updateUser)
 app.get('/user/:email?', checkJwt, userRest.getUserByEmail)
 
 app.post('/shop/create', checkJwt, shopRest.uploadShopsInfo)
 app.get('/shop', checkJwt, shopRest.getShopById)
 
-app.get('/review/user/:userId?', checkJwt, reviewRest.getReviewsByUserId)
-app.get('/review/:reviewId?', checkJwt, reviewRest.getReviewByReviewId)
-app.patch('/review/:reviewId?', checkJwt, reviewRest.updateReviewStatus)
+app.get('/review/user/:userId?', checkJwt, checkReviewByUserPerm, reviewRest.getReviewsByUserId)
+app.get('/review/:reviewId?', checkJwt, checkReviewByIdPerm, reviewRest.getReviewByReviewId)
+app.patch('/review/:reviewId?', checkJwt, checkReviewByIdPerm, reviewRest.updateReviewStatus)
 app.post('/review/upload', checkJwt, reviewRest.uploadReview)
 
 app.post('/images', upload, checkJwt, imagesRest.uploadImages)

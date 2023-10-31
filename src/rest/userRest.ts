@@ -6,6 +6,7 @@ export async function login(req, res) {
     if (!userExist) {
         const newUser = new User({
             email: req.body.email,
+            auth0Id: req.body.auth0Id,
             name: req.body.name,
             useGooglePhoto: true,
             profilePhotoURL: req.body.photoURL,
@@ -18,7 +19,7 @@ export async function login(req, res) {
     res.end(JSON.stringify({ status: 200 }))
 }
 
-export async function addUser(req, res) {
+export async function updateUser(req, res) {
     const session = await mongoose.startSession()
     try {
         if (!session) {
