@@ -28,8 +28,10 @@ const checkJwt = auth({
 })
 
 app.post('/user/login', checkJwt, userRest.login)
-app.patch('/user/:email?', checkJwt, userRest.updateUser)
-app.get('/user/:email?', checkJwt, userRest.getUserByEmail)
+app.patch('/user/email/:email?', checkJwt, userRest.updateUser)
+app.get('/user/email/:email?', checkJwt, userRest.getUserByEmail)
+app.get('/user/:id?', checkJwt, userRest.getUserById)
+app.patch('/user/:id?', checkJwt, userRest.updateUserById)
 
 app.post('/shop/create', checkJwt, shopRest.uploadShopsInfo)
 app.get('/shop', checkJwt, shopRest.getShopById)

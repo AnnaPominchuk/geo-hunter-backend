@@ -13,7 +13,7 @@ const checkReviewByIdPerm = async (req, res, next) => {
                 const review = await Review.findById({ _id: req.params.reviewId })
                 if (review) {
                     const user = await User.findById({ _id: review.userId })
-                    return user?.auth0Id == sub
+                    return user?.authId == sub
                 }
             } catch (error) {
                 res.status(500).send({ error: 'Failed to fetch' })
@@ -35,7 +35,7 @@ const checkReviewByUserPerm = async (req, res, next) => {
         if (req.params.userId) {
             try {
                 const user = await User.findById({ _id: req.params.userId })
-                return user?.auth0Id == sub
+                return user?.authId == sub
             } catch (error) {
                 res.status(500).send({ error: 'Failed to fetch' })
             }
