@@ -6,7 +6,7 @@ const UserSchema = new mongoose.Schema({
         required: true,
         unique: true,
     },
-    auth0Id: {
+    authId: {
         type: String,
         required: true,
         unique: true,
@@ -21,6 +21,10 @@ const UserSchema = new mongoose.Schema({
         enum: ['Admin', 'Activist'],
         default: ['Activist'],
     },
+    blocked: {
+        type: Boolean,
+        default: false,
+    }
 })
 
 module.exports = mongoose.model('User', UserSchema)

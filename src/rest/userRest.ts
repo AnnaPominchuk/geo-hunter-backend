@@ -6,7 +6,7 @@ export async function login(req, res) {
     if (!userExist) {
         const newUser = new User({
             email: req.body.email,
-            auth0Id: req.body.auth0Id,
+            authId: req.body.authId,
             name: req.body.name,
             useGooglePhoto: true,
             profilePhotoURL: req.body.photoURL,
@@ -57,6 +57,55 @@ export async function getUserByEmail(req, res) {
             res.status(200).send({ users: users })
         }
     } catch (error) {
+        res.status(500).send({ error: error.message })
+    }
+}
+
+export async function getUserById(req, res) {
+    try {
+        if (req.params.id) {
+            const user = await User.findById({ _id: req.params.id })
+            if (user) res.status(200).send({ users: user })
+            else res.status(404).send({ error: 'User not found' })
+        } else {
+            const users = await User.find()
+            res.status(200).send({ users: users })
+        }
+    } catch (error) {
+        res.status(500).send({ error: error.message })
+    }
+}
+
+export async function updateUserById(req, res) {
+    const session = await mongoose.startSession()
+    try {
+        if (!session) {
+            console.log('Error occur while starting session')
+            res.status(500).send({ error: 'Internal server error' })
+        }
+
+        if (req.params.id) {
+            await session.startTransaction()
+            const user = await User.findById({ _id: req.params.id })
+            if (user) {
+                user.set(req.body)
+                await user.save()
+
+                await session.commitTransaction()
+                session.endSession()
+
+                res.status(200).send({ authId: user.authId })
+            }
+            else res.status(404).send({ error: 'User not found' })
+        } else {
+            const users = await User.find()
+            res.status(200).send({ users: users })
+        }
+    } catch (error) {
+        if (session) {
+            await session.abortTransaction()
+            session.endSession()
+        }
         res.status(500).send({ error: error.message })
     }
 }
