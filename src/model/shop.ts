@@ -31,6 +31,10 @@ const ShopSchema = new mongoose.Schema({
         type: String,
         required: false,
     },
+    hasSupportBoard: {
+        type: Boolean,
+        required: false,
+    },
 })
 
 module.exports = mongoose.model('Shop', ShopSchema)

@@ -69,16 +69,25 @@ export async function updateReviewStatus(req, res) {
             }
 
             if (status === 'Approved') {
-                if (options && options.saveAddress) {
+                if (options) {
                     const shop = await Shop.findById({ _id: review.shopId })
 
+                    const newShopData = {
+                        name: review.name,
+                    }
+
+                    if (review.hasSupportBoard) {
+                        newShopData['hasSupportBoard'] = review.hasSupportBoard
+                    }
+
+                    if (options.saveAddress) {
+                        newShopData['address'] = review.address
+                        newShopData['latitude'] = review.latitude
+                        newShopData['longitude'] = review.longitude
+                    }
+
                     if (shop) {
-                        shop.set({
-                            address: review.address,
-                            latitude: review.latitude,
-                            longitude: review.longitude,
-                            name: review.name,
-                        })
+                        shop.set(newShopData)
                         await shop.save()
                     }
                 }

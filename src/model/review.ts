@@ -24,6 +24,12 @@ const ReviewSchema = new mongoose.Schema(
         images: {
             type: Array,
         },
+        overallRating: {
+            type: String,
+            enum: ['Fine', 'MaybeSuspicious', 'ObviouslySuspicious'],
+            default: 'Fine',
+        },
+        hasSupportBoard: Boolean,
     },
     {
         collection: 'reviews',
