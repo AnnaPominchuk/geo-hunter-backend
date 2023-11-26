@@ -35,6 +35,15 @@ const ShopSchema = new mongoose.Schema({
         type: Boolean,
         required: false,
     },
+    hasOpenHoursAdded: {
+        type: Boolean,
+        required: false,
+    },
+    overallRating: {
+        type: String,
+        enum: ['Fine', 'MaybeSuspicious', 'ObviouslySuspicious'],
+        default: 'Fine',
+    },
 })
 
 module.exports = mongoose.model('Shop', ShopSchema)
