@@ -80,6 +80,14 @@ export async function updateReviewStatus(req, res) {
                         newShopData['hasSupportBoard'] = review.hasSupportBoard
                     }
 
+                    if (review.hasOpenHoursAdded) {
+                        newShopData['hasOpenHoursAdded'] = review.hasOpenHoursAdded
+                    }
+
+                    if (options.saveOverallRating) {
+                        newShopData['overallRating'] = review.overallRating
+                    }
+
                     if (options.saveAddress) {
                         newShopData['address'] = review.address
                         newShopData['latitude'] = review.latitude

@@ -30,6 +30,7 @@ const ReviewSchema = new mongoose.Schema(
             default: 'Fine',
         },
         hasSupportBoard: Boolean,
+        hasOpenHoursAdded: Boolean
     },
     {
         collection: 'reviews',
